@@ -430,5 +430,5 @@ if __name__ == "__main__":
             theta = np.pi/2
 
         label = sim.execute_grasp(x, y, theta)
-        time.sleep(0.1)
+        time.sleep(1)
         print('SUCCESS' if label else 'FAILURE')

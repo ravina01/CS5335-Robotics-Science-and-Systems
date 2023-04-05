@@ -49,18 +49,38 @@ class GraspDataset(Dataset):
 
         Example Action Rotations
         ------------------------
-        action = (32, 32, 1)
-         - Rot   0 deg : rot_action = (32, 32, 1)
-         - Rot  90 deg : rot_action = (32, 32, 0)
-         - Rot 180 deg : rot_action = (32, 32, 1)
-         - Rot 270 deg : rot_action = (32, 32, 0)
+        action = (42, 42, 0)
+        - Rot   0 deg : rot_action = (42, 42, 0)
+        - Rot  90 deg : rot_action = (21, 42, 1)
+        - Rot 180 deg : rot_action = (21, 21, 0)
+        - Rot 270 deg : rot_action = (42, 21, 1)
 
-        action = (0, 63, 0)
-         - Rot   0 deg : rot_action = ( 0, 63, 0)
-         - Rot  90 deg : rot_action = ( 0,  0, 1)
-         - Rot 180 deg : rot_action = (63,  0, 0)
-         - Rot 270 deg : rot_action = (63, 63, 1)
+        action = (15, 45, 1)
+        - Rot   0 deg : rot_action = (15, 45, 1)
+        - Rot  90 deg : rot_action = (18, 15, 0)
+        - Rot 180 deg : rot_action = (48, 18, 1)
+        - Rot 270 deg : rot_action = (45, 48, 0)
+
+    
         '''
+        angle_choices = [0, 90, 180, 270]
+        angle = int(np.random.choice(angle_choices))
+        img = TF.rotate(img, angle)
+        px, py, rot_id = action
+
+        img_dim = 63  # The maximum index for the 64x64 image
+
+        if angle == 90:
+            px, py = img_dim - py, px
+            rot_id = (rot_id + 1) % 2
+        elif angle == 180:
+            px, py = img_dim - px, img_dim - py
+        elif angle == 270:
+            px, py = py, img_dim - px
+            rot_id = (rot_id + 1) % 2
+
+        action = np.array([px, py, rot_id])
+        
         ################################
         # Implement this function for Q4
         ################################
@@ -86,3 +106,18 @@ class GraspDataset(Dataset):
     def __len__(self) -> int:
         '''Number of grasps within dataset'''
         return self.imgs.shape[0]
+
+# if __name__ == "__main__":
+#     # Create dataset instance
+#     dataset = GraspDataset(train=True)
+
+#     # Get a sample image from the dataset
+#     img, _ = dataset.__getitem__(0)  # You can change the index to any valid index in the dataset
+
+#     # Test action rotations
+#     action = np.array([15, 45, 1])
+#     rotation_angles = [0, 90, 180, 270]
+#     rotated_img, rotated_action = dataset.transform_grasp(img, action)
+
+#     print(f"Original action: {action}")
+#     print(f"Rotated action: {rotated_action}")

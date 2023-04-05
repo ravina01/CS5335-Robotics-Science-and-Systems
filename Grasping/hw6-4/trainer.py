@@ -11,7 +11,6 @@ from torchvision.models import mobilenet_v3_small
 
 from dataset import GraspDataset
 
-
 class MobileUNet(nn.Module):
     def __init__(self, pretrained: bool=True, num_rots: int=2) -> None:
         '''Implements UNet style network with pretrained MobileNetv3 backbone
@@ -39,10 +38,26 @@ class MobileUNet(nn.Module):
         # output of self.backbone2 is tensor of shape (B, 40, 4, 4)
         self.backbone2 = nn.Sequential(*[all_layers[i] for i in range(3, 6)])
 
-        ##########################
-        # define other layers here
-        ##########################
-        raise NotImplementedError
+        print(self)
+
+        self.backbone2_conv1 = nn.Conv2d(40,128, kernel_size=1, padding=0, stride=1)
+        self.backbone2_relu1 = nn.ReLU(inplace=True)
+        
+        self.backbone2_upsample1 = nn.Upsample(scale_factor=8, mode="bilinear")
+
+        self.backbone2_conv2 = nn.Conv2d(128,4, kernel_size=1)
+
+        self.backbone1_upsample1 = nn.Upsample(scale_factor=4, mode="bilinear")
+
+        self.backbone1_conv1 = nn.Conv2d(24,4, kernel_size=1, padding=0, stride=1)
+        #self.backbone1_relu1 = nn.ReLU(inplace=True)
+        
+        self.front_conv = nn.Conv2d(4,2,kernel_size=1)
+        self.front_relu1 = nn.ReLU(inplace=True)
+
+        self.front_upsample1 = nn.Upsample(scale_factor=2, mode="bilinear")
+      
+        #raise NotImplementedError
 
 
     def forward(self, img: Tensor) -> Tensor:
@@ -61,10 +76,38 @@ class MobileUNet(nn.Module):
         x_wide = self.backbone1(img) # tensor of shape (B, 24, 8, 8)
         x_narrow = self.backbone2(x_wide) # tensor of shape (B, 40, 4, 4)
 
-        ############################################
-        # implement additional steps in forward pass
-        ############################################
-        raise NotImplementedError
+
+        out2 = self.backbone2_conv1(x_narrow)
+        out2 = self.backbone2_relu1(out2)
+        #print(out2.shape)
+
+        out2 = self.backbone2_upsample1(out2)
+        #print("Upscale Upper layer = ",out2.shape)
+
+        out2 = self.backbone2_conv2(out2)
+        #print(out2.shape)
+
+        out1 = self.backbone1_upsample1(x_wide)
+        #print("Upscale lower layer = ",out1.shape)
+
+        out1 = self.backbone1_conv1(out1)
+        #print(out1.shape)
+
+        residual = out1 + out2
+        #print(residual.shape)
+
+        #Uncomment this line. I have modified the given n/w in order to increase the success rates
+        residual = self.front_relu1(residual)
+
+        final = self.front_conv(residual)
+        final = self.front_relu1(final)
+        #print(final.shape)
+
+        final = self.front_upsample1(final)
+        #print(final.shape)
+
+        return final
+        #raise NotImplementedError
 
 
     @torch.no_grad()
@@ -205,5 +248,5 @@ if __name__ == "__main__":
     LR = 5e-4
     PLOT_FREQ = 5 # plot predictions every this many number of epochs
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+    print(DEVICE)
     main()

@@ -15,7 +15,7 @@ def main(args):
 
     model = MobileUNet(pretrained=False)
     model.load(args.model_path)
-    model.eval()
+    model.eval()    
 
     labels = []
     pbar = tqdm(range(args.num_grasps),
@@ -43,4 +43,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args)
-
